@@ -93,8 +93,27 @@ python3 ../cubbie-hackathon-kit/skills/cubbie-skill-creator/scripts/validate_cub
 
 ## Tested on Cubbie
 
-_Not run yet._ The 13-step conversation checklist (setup, a persona's voice, receipts, a sick day, a buddy
-draft, forgetting) is run on a real Cubbie account by a teammate, and the pass/fail results go here.
+Run on a real Cubbie account over iMessage on Oct 24, 2026 (texts sent from the repo's `main` branch link).
+Cubbie runs the bundled tests itself on install ("all 37 tests passed", later "all 38"), so `log.py` works in its sandbox.
+
+| # | Test | Result |
+|---|------|--------|
+| 1 | "i keep skipping the gym, hold me accountable" | Pass. One question at a time, a default offered each time. |
+| 2 | Accept defaults, Mob Boss, calls yes, buddy Maya | Pass. Full plan, then "Lock it in?"; nothing scheduled yet. |
+| 3 | "yes" | Pass. Weekdays 6 pm check-in created, in Phoenix time. |
+| 4 | Excuse: "too tired, long lab day" | Partial on the first run: pushy, smaller version offered, but the voice was generic. Fixed (the coach's entry in `personas.md` must be read first); after the fix Mob Boss answers with "We've got an arrangement". |
+| 5 | Second excuse, receipts quoted | Fail on the first run: the reply offered a smaller version but quoted nothing. Fixed (every excuse reply carries the newest receipt); after the fix: `Today, Oct 24, you said "skipped again. too tired after class"`. Not yet re-tested with an excuse from an earlier day. |
+| 6 | "i'm sick, have a fever" | Pass. No roast, "being sick doesn't count against you". |
+| 7 | "stats", "receipts" | Pass. Exact numbers and wording. Found a bug: an excuse followed by a sick report counted as skipped; fixed and re-verified ("Today now correctly counts as excused"). |
+| 8 | "change coach to drill sergeant", "intensity 3" | Pass. Voice changed; settings kept. |
+| 9 | Ignore a check-in, calls on | **Not run yet.** Needs a real 6 pm check-in left unanswered for an hour. |
+| 10 | Buddy push | Pass after the fix. Draft to Maya, then "Send it? You'd send it yourself."; declining sent nothing. |
+| 11 | "make me a study plan for my midterm" | Pass. Went to the study-plan flow (asked which midterm), not Prod Coach. |
+| 12 | New conversation next day | **Not run yet.** |
+| 13 | "forget my excuses" | Pass. Asked to confirm, then receipts were gone and the counts kept. |
+
+Known rough edges: Cubbie sometimes takes 1 to 2 minutes to answer, and it adds a short urgent-care line when a
+student says they have a fever.
 
 ## Limitations
 
