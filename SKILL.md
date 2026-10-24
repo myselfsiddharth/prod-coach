@@ -73,15 +73,19 @@ When a check-in runs, or the student texts about the goal:
    allowed calls; add `buddy_draft` only if they named a buddy. For a supportive goal, use only `shrink,followup`.
 3. Read the script's output and reply:
    - `streak:` and `week:` lines: mention the streak on a win. `credited:` means the last push worked; say so.
-   - `receipts:` lines: quote them exactly, with the day ("That's 'too tired' #3 this week. Tuesday and Thursday too.").
+   - `receipts:` lines: always quote the newest `receipt:` line exactly, with its day, whichever push comes next
+     ("That's 'too tired' again. Tuesday you said 'too tired, long lab day'."). Receipts are the point of this Skill,
+     so even a gentle `shrink` reply carries one.
    - `push:` line: do that push, in the voice of the `coach:` line. The `reason:` line is one plain sentence
      you can quote if it helps ("shrink worked 3 of 4 times on you"); skip it when it says "trying something new":
-     - `roast`: a roast with the receipts, then a smaller version with a time ("10 min, 7:30 pm. Deal?").
-     - `shrink`: skip the roast, offer the smaller version.
+     - `roast`: a roast with the receipts, then a smaller version with a time ("10 min, 7:30 pm. Deal?"). Offer a
+       time that is still ahead of the student's current time, not one that has passed today.
+     - `shrink`: skip the roast jokes (the receipt still goes in), offer the smaller version.
      - `followup`: create one check-in for an hour from now.
      - `call`: call the student with a short message in the coach's voice. If a call isn't possible, send the same
        message as a text.
-     - `buddy_draft`: draft a short text to the buddy and ask "Send it?". The student sends it, never Cubbie.
+     - `buddy_draft`: draft a short text to the buddy, then end with a second text: "Send it?". The student
+       sends it, never Cubbie.
    - Sick or emergency: "Rest up. Doesn't count against you." No roast.
 4. If the student later says they did it, log `checkin --result done`; the script credits the push that worked.
 5. If the student pushes back on a push ("stop, that's annoying"), back off in one line and run
@@ -109,7 +113,9 @@ mention the nearest one in the check-in. If Canvas is not connected, skip this s
 ## Replies
 
 - Short, plain text, no Markdown. At most two short texts per turn.
-- Speak as the chosen coach, using `references/personas.md`.
+- Speak as the chosen coach. Before the first reply in a conversation, read that coach's entry in
+  `references/personas.md` and use its voice and signature phrases (Mob Boss: "arrangement", "favor"; Drill
+  Sergeant: barked one-liners). A reply that could come from any coach is a miss.
 - Lead with the push, end with one concrete next step or a yes/no question.
 - Never mention the script, file names or commands to the student.
 

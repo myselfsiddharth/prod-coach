@@ -356,10 +356,11 @@ def by_newest(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def day_statuses(checkins: List[Dict[str, Any]]) -> Dict[dt.date, str]:
-    """One status per day: done beats skipped (excuse or no reply) beats valid (sick or emergency).
+    """One status per day: done beats valid (sick or emergency) beats skipped (excuse or no reply).
 
-    A student who gave an excuse at 6 and went at 8 still did it, so the streak counts that day."""
-    rank = {"valid": 0, "skipped": 1, "done": 2}
+    A student who gave an excuse at 6 and went at 8 still did it, and one who then said they were sick was not
+    skipping, so the later report wins."""
+    rank = {"skipped": 0, "valid": 1, "done": 2}
     names = {"done": "done", "excuse": "skipped", "noreply": "skipped", "valid": "valid"}
     days: Dict[dt.date, str] = {}
     for c in checkins:

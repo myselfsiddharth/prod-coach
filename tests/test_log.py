@@ -169,6 +169,12 @@ class Streaks(LogTestCase):
                           ("2026-10-24T19:30", "done", "", None)])
         self.assertEqual(self.lines(self.ok("stats", "--now", "2026-10-24T20:00"))["streak"], "2")
 
+    def test_a_sick_report_after_an_excuse_makes_it_an_excused_day(self):
+        self.write_state([("2026-10-23T18:00", "done", "", None), ("2026-10-24T18:00", "excuse", "tired", "tired"),
+                          ("2026-10-24T19:00", "valid", "fever", None)])
+        stats = self.lines(self.ok("stats", "--now", "2026-10-24T20:00"))
+        self.assertEqual((stats["streak"], stats["week"]), ("1", "done 1, skipped 0, excused 1"))
+
     def test_noreply_breaks_the_streak(self):
         self.write_state(self.days("done", "done"))
         out = self.ok("checkin", "--now", "2026-10-20T19:00", "--result", "noreply")

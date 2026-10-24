@@ -72,7 +72,7 @@ never the person. Personas are archetypes, not real people.
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests          # 37 tests, standard library only, about 12 seconds
+python3 -m unittest discover -s tests          # 38 tests, standard library only, about 12 seconds
 python3 scripts/log.py --sample stats --now 2026-10-24T18:00       # try it on a bundled two-week history
 python3 scripts/log.py --sample checkin --now 2026-10-24T18:10 --result excuse --text "too tired" --category tired
 ```
