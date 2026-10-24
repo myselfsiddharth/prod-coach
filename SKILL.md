@@ -96,6 +96,10 @@ When a check-in runs, or the student texts about the goal:
 
 - "stats" / "how am I doing": `python3 scripts/log.py stats --now <now>`, reply in three short lines.
 - "receipts": `python3 scripts/log.py receipts --limit 5`, quote them exactly with dates.
+- "calendar" / "dashboard" / "show my progress": `python3 scripts/log.py calendar --now <now>` (add `--months 3`
+  for more history). It saves a calendar page and prints `days:`, `streak:` and `best_streak:` lines. Send the student
+  the saved page using Cubbie's files or documents ability, with one short text that gives those lines. If a file
+  can't be sent, give only the lines. Never show the student the file's name or location.
 - "change coach to …", "intensity 1/2/3", "stop calling", "pause for a week": update with
   `python3 scripts/log.py setup ...` (same flags) and Cubbie's memory; change or pause the scheduled check-in.
 - "forget my excuses": confirm, then `python3 scripts/log.py forget --what excuses` and ask Cubbie's memory to forget them.

@@ -62,7 +62,12 @@ It's 6 pm. You said you'd go. You text back "too tired, long lab day." This is a
 - **It learns what works on you.** Each push is a roast, a smaller version of the task, a follow-up, a text to a buddy
   that *you* send, or a phone call (only if you allow it). The script scores each by whether you actually went
   afterwards and picks the next one from that.
+- **A calendar of your progress.** Text "calendar" and get a page with every day colored (went, skipped, excused),
+  your streak and best streak, which excuses you lean on, and your receipts. It's one self-contained file, saved
+  on your own Cubbie.
 - **On your side.** Sick days don't count against you. It roasts the excuse, never you.
+
+<div align="center"><img src="docs/img/calendar.jpg" alt="The calendar page: October with green days for going, pink for skipped, yellow for excused, plus streak tiles and receipts" width="380"><br><sub>The calendar page, shown on the bundled sample history.</sub></div>
 
 | Coach | Voice |
 |---|---|
@@ -118,6 +123,7 @@ Try it without Cubbie, on a bundled two-week sample history (nothing is saved):
 ```bash
 python3 scripts/log.py --sample stats --now 2026-10-24T18:00
 python3 scripts/log.py --sample checkin --now 2026-10-24T18:10 --result excuse --text "too tired" --category tired
+python3 scripts/log.py --sample calendar --now 2026-10-24T18:00 --months 2 --out calendar.html   # then open it
 ```
 
 ## Privacy
@@ -135,7 +141,7 @@ never the person. Personas are archetypes, not real people.
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests       # 38 tests, standard library only, about 12 seconds
+python3 -m unittest discover -s tests       # 45 tests, standard library only, about 13 seconds
 ```
 
 They run the script exactly as Cubbie does (a subprocess with a throwaway `HOME`) and cover: setup and stats on an
@@ -143,7 +149,7 @@ empty history; receipts order and exact wording; streaks (sick days don't break 
 by going still counts); the 3-hour credit window; the picker preferring what works in the same situation, exploring
 the least-tried option, never calling unless allowed or twice in a row, and the supportive restrictions; `--sample`
 writing nothing; corrupt files (exit 4, set aside), missing setup (exit 3) and bad input (exit 2); forgetting; and
-every output staying under 8,000 characters. Verified on Python 3.9, 3.12 and 3.14, and in CI. Cubbie also runs
+the calendar page (colors, escaping, no outside resources, removed by "forget"); and every output staying under 8,000 characters. Verified on Python 3.9, 3.12 and 3.14, and in CI. Cubbie also runs
 them itself when it installs the Skill.
 
 ## Tested on Cubbie
@@ -179,6 +185,8 @@ fire on time.
 - Times are your local time as passed in by Cubbie. There is no time-zone logic in the script.
 - Phone calls are opt-in and depend on what Cubbie can do for a student; they are not tested yet. If a call isn't
   possible, Cubbie falls back to a text.
+- The calendar page is generated and tested locally; sending it to a student as a file has not been tried on a
+  real Cubbie yet.
 - Cubbie sometimes takes a minute or two to answer.
 
 ## Repo layout
@@ -188,14 +196,14 @@ SKILL.md                what Cubbie reads: setup, check-in steps, replies, hard 
 references/personas.md  the seven coaches and their voices
 scripts/log.py          the log, receipts, streaks and push picker (Python 3.9+, standard library only)
 assets/sample_log.json  two weeks of sample history for --sample
-tests/test_log.py       38 unit tests
+tests/test_log.py       45 unit tests
 docs/img/               images for this README
 ```
 
 ## Contributing
 
-Ideas welcome: new coaches (archetypes only, never real people), better excuse categories, a calendar view of your
-streaks. Open an issue or a pull request. Keep the script standard-library only and add a test for any change.
+Ideas welcome: new coaches (archetypes only, never real people), better excuse categories, a web version of the calendar
+that updates live. Open an issue or a pull request. Keep the script standard-library only and add a test for any change.
 
 ## Credits
 
