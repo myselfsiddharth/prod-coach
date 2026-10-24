@@ -166,6 +166,10 @@ Run on a real Cubbie account over iMessage on Oct 24, 2026, from this repo's `ma
 | 12 | New conversation next day | **Not run yet.** |
 | 13 | "forget my excuses" | Pass. Asked to confirm, then receipts were gone and the counts kept. |
 
+Bonus: after the sick-day test Cubbie said it would check on the student at 4:25 pm, and at 4:25 pm Phoenix time it
+sent "Hey, has your fever eased at all? How are you feeling now?" without being asked, so scheduled follow-ups do
+fire on time.
+
 ## Limitations
 
 - One goal per student at a time. Changing the goal keeps the history.
