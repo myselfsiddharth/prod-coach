@@ -1,0 +1,195 @@
+{
+  "version": 1,
+  "settings": {
+    "goal": "gym",
+    "minutes": 45,
+    "coach": "auto",
+    "intensity": 2,
+    "calls": true,
+    "buddy": "Maya",
+    "supportive": false,
+    "updated": "2026-10-12T17:40"
+  },
+  "checkins": [
+    {
+      "id": 1,
+      "at": "2026-10-12T18:03",
+      "result": "done",
+      "text": "",
+      "category": null
+    },
+    {
+      "id": 2,
+      "at": "2026-10-13T18:05",
+      "result": "excuse",
+      "text": "too tired, long lab day",
+      "category": "tired"
+    },
+    {
+      "id": 3,
+      "at": "2026-10-14T18:04",
+      "result": "excuse",
+      "text": "group project meeting ran long",
+      "category": "busy"
+    },
+    {
+      "id": 4,
+      "at": "2026-10-15T18:06",
+      "result": "excuse",
+      "text": "i'll go tomorrow, promise",
+      "category": "later"
+    },
+    {
+      "id": 5,
+      "at": "2026-10-15T19:12",
+      "result": "done",
+      "text": "",
+      "category": null
+    },
+    {
+      "id": 6,
+      "at": "2026-10-16T18:02",
+      "result": "excuse",
+      "text": "so tired, barely slept",
+      "category": "tired"
+    },
+    {
+      "id": 7,
+      "at": "2026-10-19T18:05",
+      "result": "noreply",
+      "text": "",
+      "category": "noreply"
+    },
+    {
+      "id": 8,
+      "at": "2026-10-20T18:04",
+      "result": "excuse",
+      "text": "it's pouring, not walking to the gym",
+      "category": "weather"
+    },
+    {
+      "id": 9,
+      "at": "2026-10-20T19:30",
+      "result": "done",
+      "text": "",
+      "category": null
+    },
+    {
+      "id": 10,
+      "at": "2026-10-21T18:06",
+      "result": "valid",
+      "text": "fever, staying in bed",
+      "category": null
+    },
+    {
+      "id": 11,
+      "at": "2026-10-22T18:03",
+      "result": "excuse",
+      "text": "ugh tired again",
+      "category": "tired"
+    },
+    {
+      "id": 12,
+      "at": "2026-10-22T19:05",
+      "result": "done",
+      "text": "",
+      "category": null
+    },
+    {
+      "id": 13,
+      "at": "2026-10-23T18:05",
+      "result": "excuse",
+      "text": "have to finish my essay first",
+      "category": "busy"
+    },
+    {
+      "id": 14,
+      "at": "2026-10-23T18:45",
+      "result": "done",
+      "text": "",
+      "category": null
+    }
+  ],
+  "pushes": [
+    {
+      "id": 1,
+      "checkin_id": 2,
+      "at": "2026-10-13T18:05",
+      "kind": "roast",
+      "coach": "drill_sergeant",
+      "explored": false,
+      "outcome": "ignored",
+      "outcome_at": "2026-10-14T18:04"
+    },
+    {
+      "id": 2,
+      "checkin_id": 3,
+      "at": "2026-10-14T18:04",
+      "kind": "roast",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "ignored",
+      "outcome_at": "2026-10-15T18:06"
+    },
+    {
+      "id": 3,
+      "checkin_id": 4,
+      "at": "2026-10-15T18:06",
+      "kind": "shrink",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "complied",
+      "outcome_at": "2026-10-15T19:12"
+    },
+    {
+      "id": 4,
+      "checkin_id": 6,
+      "at": "2026-10-16T18:02",
+      "kind": "roast",
+      "coach": "disappointed_dad",
+      "explored": false,
+      "outcome": "ignored",
+      "outcome_at": "2026-10-19T18:05"
+    },
+    {
+      "id": 5,
+      "checkin_id": 7,
+      "at": "2026-10-19T18:05",
+      "kind": "followup",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "ignored",
+      "outcome_at": "2026-10-20T18:04"
+    },
+    {
+      "id": 6,
+      "checkin_id": 8,
+      "at": "2026-10-20T18:04",
+      "kind": "shrink",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "complied",
+      "outcome_at": "2026-10-20T19:30"
+    },
+    {
+      "id": 7,
+      "checkin_id": 11,
+      "at": "2026-10-22T18:03",
+      "kind": "buddy_draft",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "complied",
+      "outcome_at": "2026-10-22T19:05"
+    },
+    {
+      "id": 8,
+      "checkin_id": 13,
+      "at": "2026-10-23T18:05",
+      "kind": "roast",
+      "coach": "mob_boss",
+      "explored": false,
+      "outcome": "complied",
+      "outcome_at": "2026-10-23T18:45"
+    }
+  ]
+}
