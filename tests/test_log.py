@@ -306,6 +306,81 @@ class Picker(LogTestCase):
         self.assertEqual(self.lines(self.excuse(allowed=""))["push"], "shrink")
 
 
+class Calendar(LogTestCase):
+    def page(self):
+        return (Path(self.home) / ".config" / "prod-coach" / "calendar.html").read_text(encoding="utf-8")
+
+    def history(self):
+        self.write_state([
+            ("2026-10-20T18:00", "done", "", None), ("2026-10-21T18:00", "valid", "fever", None),
+            ("2026-10-22T18:00", "excuse", "too tired", "tired"), ("2026-10-22T19:00", "done", "", None),
+            ("2026-10-23T18:00", "excuse", "essay due", "busy"), ("2026-10-24T18:00", "done", "", None),
+            ("2026-09-30T18:00", "excuse", "last month", "later"),
+        ])
+
+    def test_writes_a_page_and_prints_a_summary(self):
+        self.history()
+        out = self.ok("calendar", "--now", "2026-10-24T20:00")
+        values = self.lines(out)
+        self.assertEqual((values["month"], values["days"]), ("October 2026", "went 3, skipped 1, excused 1"))
+        self.assertEqual((values["streak"], values["best_streak"]), ("1", "2"))  # the 23rd broke the run
+        self.assertTrue(values["file"].endswith("calendar.html"))
+        page = self.page()
+        self.assertIn("October 2026", page)
+        self.assertEqual(page.count('class="day done'), 3)
+        self.assertEqual(page.count('class="day skipped'), 1)
+        self.assertEqual(page.count('class="day valid'), 1)
+        self.assertIn("too tired", page)
+
+    def test_months_and_month_flags(self):
+        self.history()
+        self.ok("calendar", "--now", "2026-10-24T20:00", "--months", "2")
+        self.assertIn("September 2026", self.page())
+        out = self.ok("calendar", "--now", "2026-10-24T20:00", "--month", "2026-09")
+        self.assertEqual(self.lines(out)["days"], "went 0, skipped 1, excused 0")
+        self.assertNotIn("October 2026", self.page())
+
+    def test_page_is_self_contained_and_escapes_the_students_words(self):
+        self.write_state([("2026-10-23T18:00", "excuse", "<script>alert(1)</script> \"quote\"", "other")])
+        self.ok("calendar", "--now", NOW)
+        page = self.page()
+        self.assertNotIn("<script", page)
+        self.assertIn("&lt;script&gt;", page)
+        for outside in ("http://", "https://", "src=", "@import", "<link"):
+            self.assertNotIn(outside, page)
+
+    def test_best_streak_is_the_longest_run(self):
+        self.write_state([("2026-10-%02dT18:00" % d, r, "x" if r != "done" else "", "tired" if r == "excuse" else None)
+                          for d, r in [(1, "done"), (2, "done"), (3, "done"), (4, "excuse"), (5, "done"), (6, "done")]])
+        values = self.lines(self.ok("calendar", "--now", NOW))
+        self.assertEqual((values["streak"], values["best_streak"]), ("2", "3"))
+
+    def test_sample_mode_saves_nothing_unless_asked_with_out(self):
+        out = self.ok("--sample", "calendar", "--now", "2026-10-24T18:00")
+        self.assertNotIn("file:", out)
+        self.assertEqual(os.listdir(self.home), [])
+        target = Path(self.home) / "demo" / "cal.html"
+        self.assertIn("file:", self.ok("--sample", "calendar", "--now", "2026-10-24T18:00", "--out", str(target)))
+        self.assertIn("Receipts", target.read_text(encoding="utf-8"))
+
+    def test_forgetting_removes_the_saved_page(self):
+        self.history()
+        self.ok("calendar", "--now", NOW)
+        self.ok("forget", "--what", "excuses")
+        self.assertFalse((Path(self.home) / ".config" / "prod-coach" / "calendar.html").exists())
+        self.ok("calendar", "--now", NOW)
+        self.assertNotIn("too tired", self.page())
+        self.ok("forget", "--what", "all")
+        self.assertEqual(list(self.state_file.parent.iterdir()), [])
+
+    def test_errors(self):
+        self.assertEqual(self.run_log("calendar", "--now", NOW), (3, "error: no goal set up\n"))
+        self.write_state()
+        self.assertEqual(self.run_log("calendar", "--now", NOW, "--month", "october"),
+                         (2, "error: --month must look like 2026-10\n"))
+        self.assertEqual(self.run_log("calendar", "--now", NOW, "--months", "9")[0], 2)
+
+
 class Safety(LogTestCase):
     def test_sample_mode_never_writes_anything(self):
         before = hashlib.sha256(SAMPLE.read_bytes()).hexdigest()
@@ -314,6 +389,7 @@ class Safety(LogTestCase):
         self.ok("--sample", "setup", "--now", NOW, "--goal", "reading")
         self.ok("--sample", "outcome", "--now", NOW, "--push", "1", "--result", "complied")
         self.ok("--sample", "forget", "--what", "all")
+        self.ok("--sample", "calendar", "--now", NOW)
         self.assertEqual(os.listdir(self.home), [])
         self.assertEqual(hashlib.sha256(SAMPLE.read_bytes()).hexdigest(), before)
 

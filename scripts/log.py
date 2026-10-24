@@ -7,7 +7,9 @@ Output is short `key: value` lines for Cubbie to read.
 Exit codes: 0 ok; 1 unexpected failure; 2 bad input; 3 no goal set up yet; 4 the log could not be read.
 """
 import argparse
+import calendar as cal
 import datetime as dt
+import html
 import json
 import os
 import random
@@ -168,6 +170,13 @@ def parse_allowed(value: str) -> List[str]:
     return kinds
 
 
+def parse_month(value: str) -> dt.date:
+    try:
+        return dt.datetime.strptime(value, "%Y-%m").date()
+    except ValueError:
+        raise argparse.ArgumentTypeError("--month must look like 2026-10")
+
+
 def parse_goal(value: str) -> str:
     goal = clean_text(value, 80)
     if not goal:
@@ -222,6 +231,12 @@ def build_parser() -> argparse.ArgumentParser:
     receipts.add_argument("--limit", type=whole_number("--limit", 1, 50), default=3)
 
     add("stats", "streak, week, top excuse, what works")
+
+    calendar = add("calendar", "write a month-by-month calendar page of your check-ins")
+    calendar.add_argument("--month", type=parse_month, help="newest month to show, YYYY-MM (default: this month)")
+    calendar.add_argument("--months", type=whole_number("--months", 1, 6), default=1,
+                          help="how many months to show, newest first")
+    calendar.add_argument("--out", help="where to save the page (default: next to the log)")
 
     forget = add("forget", "forget excuse text or everything")
     forget.add_argument("--what", required=True, type=one_of("--what", ("excuses", "all")))
@@ -345,8 +360,9 @@ def delete_log_files() -> None:
     path = state_path()
     if path.exists():
         path.unlink()
-    for bad in sorted(path.parent.glob("log.json.bad-*")):
-        bad.unlink()
+    for bad in sorted(path.parent.glob("log.json.bad-*")) + [path.parent / "calendar.html"]:
+        if bad.exists():
+            bad.unlink()
 
 
 # ---------------------------------------------------------------- history maths
@@ -662,12 +678,144 @@ def cmd_forget(args: argparse.Namespace) -> List[str]:
             c["text"] = ""
     if log.path.exists():
         log.save()
-    for bad in sorted(log.path.parent.glob("log.json.bad-*")):
-        bad.unlink()
+    for old in sorted(log.path.parent.glob("log.json.bad-*")) + [log.path.parent / "calendar.html"]:
+        if old.exists():  # set-aside logs and the saved calendar page both hold the old words
+            old.unlink()
     return ["ok: excuse text forgotten, counts kept"]
 
 
-COMMANDS = {"setup": cmd_setup, "checkin": cmd_checkin, "outcome": cmd_outcome, "receipts": cmd_receipts,
+CALENDAR_STYLE = """
+  :root{--bg:#F2F6F1;--card:#fff;--ink:#16241C;--mute:#5d6e63;--line:#d9e3da;--done:#1E7A4C;--skip:#E8357C;--excuse:#FFC93C;--off:#e9efe9}
+  @media (prefers-color-scheme:dark){:root{--bg:#0F1A14;--card:#17261D;--ink:#EAF3EC;--mute:#9db0a3;--line:#294034;--done:#2FA36A;--skip:#E8357C;--excuse:#FFC93C;--off:#1d2f24}}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:720px;margin:0 auto;padding:24px 16px 48px}h1{margin:0 0 4px;font-size:1.6rem}h2{margin:28px 0 10px;font-size:1.15rem}
+  .sub{color:var(--mute);margin:0 0 18px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}.tile b{display:block;font-size:1.7rem}
+  .tile span{color:var(--mute);font-size:.85rem}.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .dow{color:var(--mute);font-size:.75rem;text-align:center}.day{aspect-ratio:1;border-radius:12px;background:var(--off);padding:5px 7px;
+  font-size:.8rem;display:flex;flex-direction:column;justify-content:space-between;color:var(--ink)}.day i{font-style:normal;font-size:1.1rem;font-weight:700;text-align:right}
+  .blank{background:none}.future{opacity:.45}.today{outline:2px solid var(--ink)}
+  .done{background:var(--done);color:#fff}.skipped{background:var(--skip);color:#fff}.valid{background:var(--excuse);color:#16241C}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--mute);font-size:.85rem;margin-top:10px}.legend em{font-style:normal;display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-1px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}.card p{margin:8px 0}.bar{display:flex;align-items:center;gap:8px;margin:8px 0}
+  .bar span{min-width:64px}.bar div{height:12px;border-radius:6px;background:var(--skip)}footer{margin-top:28px;color:var(--mute);font-size:.8rem}
+"""
+
+
+def best_streak_of(checkins: List[Dict[str, Any]]) -> int:
+    days = day_statuses(checkins)
+    best = run = 0
+    for day in sorted(days):
+        if days[day] == "done":
+            run += 1
+            best = max(best, run)
+        elif days[day] == "skipped":
+            run = 0
+    return best
+
+
+def month_counts(days: Dict[dt.date, str], year: int, month: int) -> Dict[str, int]:
+    counts = {"done": 0, "skipped": 0, "valid": 0}
+    for day, status in days.items():
+        if (day.year, day.month) == (year, month):
+            counts[status] += 1
+    return counts
+
+
+def month_html(state: State, days: Dict[dt.date, str], year: int, month: int, today: dt.date) -> str:
+    esc = lambda text: html.escape(text, quote=True)
+    marks = {"done": "\u2713", "skipped": "\u2715", "valid": "\u2013"}
+    labels = {"done": "went", "skipped": "skipped", "valid": "excused (sick or emergency)"}
+    by_day: Dict[dt.date, List[str]] = {}
+    for c in sorted(state["checkins"], key=lambda e: (e["at"], e["id"])):
+        when = parse_stamp(c["at"])
+        line = "%s %s%s" % (c["at"][11:], c["result"], ": " + c["text"] if c.get("text") else "")
+        by_day.setdefault(when.date(), []).append(line)
+    cells = ['<div class="dow">%s</div>' % d for d in ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")]
+    for week in cal.Calendar(firstweekday=6).monthdatescalendar(year, month):
+        for day in week:
+            if day.month != month:
+                cells.append('<div class="day blank"></div>')
+                continue
+            status = days.get(day)
+            classes = ["day"] + ([status] if status else []) + (["future"] if day > today else []) + (["today"] if day == today else [])
+            title = esc("%s: %s\n%s" % (day_label(dt.datetime.combine(day, dt.time())), labels.get(status, "no check-in"),
+                                       "\n".join(by_day.get(day, []))))
+            cells.append('<div class="%s" title="%s"><span>%s</span><i>%s</i></div>'
+                         % (" ".join(classes), title, day.day, marks.get(status, "")))
+    counts = month_counts(days, year, month)
+    excuses = [c for c in by_newest(state["checkins"]) if c["result"] == "excuse" and c.get("text")
+               and (parse_stamp(c["at"]).year, parse_stamp(c["at"]).month) == (year, month)]
+    kinds: Dict[str, int] = {}
+    for c in excuses:
+        kinds[c.get("category") or "other"] = kinds.get(c.get("category") or "other", 0) + 1
+    bars = "".join('<div class="bar"><span>%s</span><div style="width:%dpx"></div> %d</div>'
+                   % (esc(k), 40 * n, n) for k, n in sorted(kinds.items(), key=lambda kv: -kv[1])) or "<p>No excuses logged.</p>"
+    receipts = "".join("<p>%s: \u201c%s\u201d</p>" % (esc(day_label(parse_stamp(c["at"]))), esc(c["text"]))
+                       for c in excuses[:8]) or "<p>No receipts this month.</p>"
+    done, skipped = counts["done"], counts["skipped"]
+    rate = "%d%%" % round(100 * done / (done + skipped)) if done + skipped else "\u2013"
+    return ('<h2>%s %d</h2><div class="tiles"><div class="tile"><b>%d</b><span>days you went</span></div>'
+            '<div class="tile"><b>%d</b><span>days skipped</span></div><div class="tile"><b>%d</b><span>excused</span></div>'
+            '<div class="tile"><b>%s</b><span>went, of days with a check-in</span></div></div>'
+            '<div class="grid" style="margin-top:12px">%s</div>'
+            '<h2>Excuses by kind</h2><div class="card">%s</div><h2>Receipts</h2><div class="card">%s</div>'
+            % (cal.month_name[month], year, done, skipped, counts["valid"], rate, "".join(cells), bars, receipts))
+
+
+def render_calendar(state: State, settings: Dict[str, Any], newest: dt.date, count: int, now: dt.datetime) -> str:
+    days = day_statuses(state["checkins"])
+    months, year, month = [], newest.year, newest.month
+    for _ in range(count):
+        months.append((year, month))
+        year, month = (year, month - 1) if month > 1 else (year - 1, 12)
+    best = best_push(resolved_rows(state))
+    body = "".join(month_html(state, days, y, m, now.date()) for y, m in months)
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<title>Prod Coach calendar</title><style>%s</style></head><body><main>'
+            '<h1>\U0001F335 %s</h1><p class="sub">%d min goal. Updated %s.</p>'
+            '<div class="tiles"><div class="tile"><b>%d</b><span>day streak</span></div>'
+            '<div class="tile"><b>%d</b><span>best streak</span></div>'
+            '<div class="tile"><b style="font-size:1rem">%s</b><span>what works on you</span></div></div>%s'
+            '<div class="legend"><span><em style="background:var(--done)"></em>went</span>'
+            '<span><em style="background:var(--skip)"></em>skipped</span>'
+            '<span><em style="background:var(--excuse)"></em>excused</span>'
+            '<span><em style="background:var(--off)"></em>no check-in</span></div>'
+            '<footer>Saved on your own Cubbie. Hover a day for the words you used.</footer></main></body></html>'
+            % (CALENDAR_STYLE, html.escape(settings["goal"]), settings["minutes"], html.escape(day_label(now)),
+               streak_of(state["checkins"]), best_streak_of(state["checkins"]),
+               html.escape(best or "not enough pushes tried yet"), body))
+
+
+def cmd_calendar(log: Log, args: argparse.Namespace) -> List[str]:
+    now = need_now(args)
+    settings, state = log.settings, log.state
+    newest = (args.month or now.date()).replace(day=1)
+    page = render_calendar(state, settings, newest, args.months, now)
+    lines = []
+    if log.sample and not args.out:
+        lines.append("note: sample mode, nothing was saved")
+    else:
+        path = Path(args.out).expanduser() if args.out else state_path().parent / "calendar.html"
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix="calendar.", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(page)
+            os.replace(tmp, str(path))
+        except BaseException:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+            raise
+        lines += ["ok: calendar saved", "file: %s" % path]
+    counts = month_counts(day_statuses(state["checkins"]), newest.year, newest.month)
+    return lines + ["month: %s %d" % (cal.month_name[newest.month], newest.year),
+                    "days: went %d, skipped %d, excused %d" % (counts["done"], counts["skipped"], counts["valid"]),
+                    "streak: %d" % streak_of(state["checkins"]),
+                    "best_streak: %d" % best_streak_of(state["checkins"])]
+
+
+COMMANDS = {"calendar": cmd_calendar, "setup": cmd_setup, "checkin": cmd_checkin, "outcome": cmd_outcome, "receipts": cmd_receipts,
             "stats": cmd_stats}
 
 
