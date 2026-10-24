@@ -171,6 +171,7 @@ Run on a real Cubbie account over iMessage on Oct 24, 2026, from this repo's `ma
 | 11 | "make me a study plan for my midterm" | Pass. Went to the study-plan flow, not Prod Coach. |
 | 12 | New conversation next day | **Not run yet.** |
 | 13 | "forget my excuses" | Pass. Asked to confirm, then receipts were gone and the counts kept. |
+| 14 | "show me my calendar" | Pass after two fixes. Cubbie ran the command, replied with the day counts and streaks, and sent the page as a PDF. The first PDF broke (grid layout ignored, blank emoji, calendar split across pages) and counted a sick-then-excuse day wrongly; both fixed and re-checked on the real thing. |
 
 Bonus: after the sick-day test Cubbie said it would check on the student at 4:25 pm, and at 4:25 pm Phoenix time it
 sent "Hey, has your fever eased at all? How are you feeling now?" without being asked, so scheduled follow-ups do
@@ -185,8 +186,8 @@ fire on time.
 - Times are your local time as passed in by Cubbie. There is no time-zone logic in the script.
 - Phone calls are opt-in and depend on what Cubbie can do for a student; they are not tested yet. If a call isn't
   possible, Cubbie falls back to a text.
-- The calendar page is generated and tested locally; sending it to a student as a file has not been tried on a
-  real Cubbie yet.
+- The calendar is turned into a PDF by Cubbie, so its look depends on Cubbie's converter (it needs to stay simple
+  print-safe HTML). Hovering a day for its words only works if you open the HTML file itself.
 - Cubbie sometimes takes a minute or two to answer.
 
 ## Repo layout
