@@ -372,16 +372,15 @@ def by_newest(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def day_statuses(checkins: List[Dict[str, Any]]) -> Dict[dt.date, str]:
-    """One status per day: done beats valid (sick or emergency) beats skipped (excuse or no reply).
+    """One status per day: done if the student went at any point, otherwise the day's latest word.
 
-    A student who gave an excuse at 6 and went at 8 still did it, and one who then said they were sick was not
-    skipping, so the later report wins."""
-    rank = {"skipped": 0, "valid": 1, "done": 2}
+    A student who gave an excuse at 6 and went at 8 still did it. One who gave an excuse and then said they were
+    sick was not skipping; one who said they were sick and later said "fever's gone, just tired" was."""
     names = {"done": "done", "excuse": "skipped", "noreply": "skipped", "valid": "valid"}
     days: Dict[dt.date, str] = {}
-    for c in checkins:
+    for c in sorted(checkins, key=lambda e: (e["at"], e["id"])):
         day, status = parse_stamp(c["at"]).date(), names[c["result"]]
-        if day not in days or rank[status] > rank[days[day]]:
+        if days.get(day) != "done":
             days[day] = status
     return days
 
@@ -687,12 +686,13 @@ def cmd_forget(args: argparse.Namespace) -> List[str]:
 CALENDAR_STYLE = """
   :root{--bg:#F2F6F1;--card:#fff;--ink:#16241C;--mute:#5d6e63;--line:#d9e3da;--done:#1E7A4C;--skip:#E8357C;--excuse:#FFC93C;--off:#e9efe9}
   @media (prefers-color-scheme:dark){:root{--bg:#0F1A14;--card:#17261D;--ink:#EAF3EC;--mute:#9db0a3;--line:#294034;--done:#2FA36A;--skip:#E8357C;--excuse:#FFC93C;--off:#1d2f24}}
+  @page{margin:12mm}@media print{.grid,.card,.tile{break-inside:avoid}h2{break-after:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
   main{max-width:720px;margin:0 auto;padding:24px 16px 48px}h1{margin:0 0 4px;font-size:1.6rem}h2{margin:28px 0 10px;font-size:1.15rem}
-  .sub{color:var(--mute);margin:0 0 18px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}.tile b{display:block;font-size:1.7rem}
+  .sub{color:var(--mute);margin:0 0 18px}.tiles{display:flex;flex-wrap:wrap;gap:10px}
+  .tile{flex:1 1 130px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}.tile b{display:block;font-size:1.7rem}
   .tile span{color:var(--mute);font-size:.85rem}.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .dow{color:var(--mute);font-size:.75rem;text-align:center}.day{aspect-ratio:1;border-radius:12px;background:var(--off);padding:5px 7px;
+  .dow{color:var(--mute);font-size:.75rem;text-align:center}.day{height:64px;border-radius:12px;background:var(--off);padding:5px 7px;
   font-size:.8rem;display:flex;flex-direction:column;justify-content:space-between;color:var(--ink)}.day i{font-style:normal;font-size:1.1rem;font-weight:700;text-align:right}
   .blank{background:none}.future{opacity:.45}.today{outline:2px solid var(--ink)}
   .done{background:var(--done);color:#fff}.skipped{background:var(--skip);color:#fff}.valid{background:var(--excuse);color:#16241C}
@@ -773,7 +773,7 @@ def render_calendar(state: State, settings: Dict[str, Any], newest: dt.date, cou
     body = "".join(month_html(state, days, y, m, now.date()) for y, m in months)
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>Prod Coach calendar</title><style>%s</style></head><body><main>'
-            '<h1>\U0001F335 %s</h1><p class="sub">%d min goal. Updated %s.</p>'
+            '<h1>%s</h1><p class="sub">%d min goal. Updated %s.</p>'
             '<div class="tiles"><div class="tile"><b>%d</b><span>day streak</span></div>'
             '<div class="tile"><b>%d</b><span>best streak</span></div>'
             '<div class="tile"><b style="font-size:1rem">%s</b><span>what works on you</span></div></div>%s'
@@ -781,7 +781,7 @@ def render_calendar(state: State, settings: Dict[str, Any], newest: dt.date, cou
             '<span><em style="background:var(--skip)"></em>skipped</span>'
             '<span><em style="background:var(--excuse)"></em>excused</span>'
             '<span><em style="background:var(--off)"></em>no check-in</span></div>'
-            '<footer>Saved on your own Cubbie. Hover a day for the words you used.</footer></main></body></html>'
+            '<footer>Saved on your own Cubbie. In a browser, hover a day to see the words you used.</footer></main></body></html>'
             % (CALENDAR_STYLE, html.escape(settings["goal"]), settings["minutes"], html.escape(day_label(now)),
                streak_of(state["checkins"]), best_streak_of(state["checkins"]),
                html.escape(best or "not enough pushes tried yet"), body))

@@ -175,6 +175,12 @@ class Streaks(LogTestCase):
         stats = self.lines(self.ok("stats", "--now", "2026-10-24T20:00"))
         self.assertEqual((stats["streak"], stats["week"]), ("1", "done 1, skipped 0, excused 1"))
 
+    def test_the_latest_word_of_a_day_wins_unless_the_student_went(self):
+        self.write_state([("2026-10-24T15:00", "valid", "fever", None), ("2026-10-24T16:00", "excuse", "fever's gone, just tired", "tired"),
+                          ("2026-10-23T15:00", "excuse", "tired", "tired"), ("2026-10-23T16:00", "valid", "fever", None)])
+        stats = self.lines(self.ok("stats", "--now", "2026-10-24T20:00"))
+        self.assertEqual(stats["week"], "done 0, skipped 1, excused 1")  # the 24th skipped, the 23rd excused
+
     def test_noreply_breaks_the_streak(self):
         self.write_state(self.days("done", "done"))
         out = self.ok("checkin", "--now", "2026-10-20T19:00", "--result", "noreply")
