@@ -166,7 +166,7 @@ Run on a real Cubbie account over iMessage on Oct 24, 2026, from this repo's `ma
 | 6 | "i'm sick, have a fever" | Pass. No roast, "being sick doesn't count against you". |
 | 7 | "stats", "receipts" | Pass. Exact numbers and wording. Found a bug (an excuse followed by a sick report counted as skipped); fixed and re-verified. |
 | 8 | "change coach to drill sergeant", "intensity 3" | Pass. Voice changed; settings kept. |
-| 9 | Ignore a check-in, calls on | **Not run yet.** Needs a real 6 pm check-in left unanswered for an hour. |
+| 9 | Ignore a check-in, calls on | Partial pass. A one-off check-in fired on time (6:18 pm) and was left unanswered. An hour later Cubbie reported "no reply was recorded, and one test call is queued", so the missed-check-in path ran. Whether the phone actually rang is not confirmed: Cubbie said the call was queued and not yet confirmed answered. |
 | 10 | Buddy push | Pass after the fix. Draft to Maya, then "Send it? You'd send it yourself."; declining sent nothing. |
 | 11 | "make me a study plan for my midterm" | Pass. Went to the study-plan flow, not Prod Coach. |
 | 12 | New conversation next day | **Not run yet.** |
@@ -184,8 +184,8 @@ fire on time.
   as that call. Receipts are exact either way.
 - The picker needs a couple of weeks of check-ins before its choices are more than a good guess.
 - Times are your local time as passed in by Cubbie. There is no time-zone logic in the script.
-- Phone calls are opt-in and depend on what Cubbie can do for a student; they are not tested yet. If a call isn't
-  possible, Cubbie falls back to a text.
+- Phone calls are opt-in and depend on what Cubbie can do for a student. In the one test, Cubbie queued a call after
+  an unanswered check-in but did not confirm it connected. If a call isn't possible, Cubbie falls back to a text.
 - The calendar is turned into a PDF by Cubbie, so its look depends on Cubbie's converter (it needs to stay simple
   print-safe HTML). Hovering a day for its words only works if you open the HTML file itself.
 - Cubbie sometimes takes a minute or two to answer.
